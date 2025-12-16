@@ -29,16 +29,19 @@ WorkoutTracker::WorkoutTracker()
     m_startButton->setText("START WORKOUT");
     m_startButton->setColor(0.2f, 0.6f, 0.3f, 1.0f);
     m_startButton->setPressedColor(0.3f, 0.7f, 0.4f, 1.0f);
+    m_startButton->setTextScale(5.0f);
     
     m_historyButton = new Button();
     m_historyButton->setText("HISTORY");
     m_historyButton->setColor(0.4f, 0.4f, 0.4f, 1.0f);
     m_historyButton->setPressedColor(0.5f, 0.5f, 0.5f, 1.0f);
+    m_historyButton->setTextScale(5.0f);
     
     m_endButton = new Button();
     m_endButton->setText("END WORKOUT");
     m_endButton->setColor(0.6f, 0.2f, 0.2f, 1.0f);
     m_endButton->setPressedColor(0.7f, 0.3f, 0.3f, 1.0f);
+    m_endButton->setTextScale(5.0f);
 
     (void)m_debugMode;
 }
@@ -74,6 +77,10 @@ void WorkoutTracker::render(Renderer* renderer) {
     } else {
         renderMainScreen(renderer);
     }
+    
+    if (m_debugMode) {
+        renderDebugOverlay(renderer);
+    }
 }
 
 void WorkoutTracker::updateButtonLayouts() {
@@ -97,63 +104,95 @@ void WorkoutTracker::updateButtonLayouts() {
 }
 
 void WorkoutTracker::renderMainScreen(Renderer* renderer) {
-    // Title
-    float titleY = 50.0f;
-    renderer->drawRect(10.0f, titleY, m_screenWidth - 20.0f, 60.0f, 0.2f, 0.4f, 0.6f, 1.0f);
+    // Title with proper margins
+    float titleY = Layout::MARGIN_MEDIUM;
+    float titleWidth = m_screenWidth - (Layout::MARGIN_SMALL * 2);
+    renderer->drawRect(Layout::MARGIN_SMALL, titleY, titleWidth, Layout::TITLE_HEIGHT, 0.2f, 0.4f, 0.6f, 1.0f);
+    if (m_textRenderer) {
+        float titleTextWidth = m_textRenderer->getTextWidth("WORKOUT TRACKER", 1.5f);
+        float titleTextX = Layout::centerTextX("WORKOUT TRACKER", titleTextWidth, m_screenWidth);
+        m_textRenderer->drawText(titleTextX, titleY + Layout::PADDING_MEDIUM, "WORKOUT TRACKER", 1.0f, 1.0f, 1.0f, 1.0f, 1.5f);
+    }
     
-    // Start Workout button
-    float buttonY = m_screenHeight / 2.0f - 50.0f;
-    float buttonHeight = 80.0f;
-    renderer->drawRect(50.0f, buttonY, m_screenWidth - 100.0f, buttonHeight, 0.2f, 0.6f, 0.3f, 1.0f);
-    
-    // Workout history button
-    float historyButtonY = buttonY + buttonHeight + 30.0f;
-    renderer->drawRect(50.0f, historyButtonY, m_screenWidth - 100.0f, buttonHeight, 0.4f, 0.4f, 0.4f, 1.0f);
+    // Render buttons
+    if (m_startButton) {
+        m_startButton->render(renderer, m_textRenderer);
+    }
+    if (m_historyButton) {
+        m_historyButton->render(renderer, m_textRenderer);
+    }
 }
 
 void WorkoutTracker::renderWorkoutScreen(Renderer* renderer) {
     // Header with workout name and timer
-    renderer->drawRect(0.0f, 0.0f, m_screenWidth, 100.0f, 0.2f, 0.3f, 0.5f, 1.0f);
+    renderer->drawRect(0.0f, 0.0f, m_screenWidth, Layout::HEADER_HEIGHT, 0.2f, 0.3f, 0.5f, 1.0f);
     
     // Timer display
     int elapsed = getElapsedSeconds();
-//    int minutes = elapsed / 60;
-//    int seconds = elapsed % 60;
+    if (m_textRenderer) {
+        float timerTextWidth = m_textRenderer->getTextWidth("00:00", 2.0f);
+        float timerX = Layout::centerTextX("00:00", timerTextWidth, m_screenWidth);
+        m_textRenderer->drawTime(timerX, Layout::PADDING_LARGE + 10.0f, elapsed, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f);
+        
+        // Workout name
+        float nameX = Layout::MARGIN_MEDIUM;
+        m_textRenderer->drawText(nameX, Layout::PADDING_SMALL, m_currentWorkout.name, 0.9f, 0.9f, 0.9f, 1.0f, 1.0f);
+    }
     
-    // Exercise list area
-    float listY = 120.0f;
-    float listHeight = m_screenHeight - listY - 100.0f;
-    renderer->drawRect(10.0f, listY, m_screenWidth - 20.0f, listHeight, 0.15f, 0.15f, 0.2f, 1.0f);
+    // Exercise list area with proper spacing
+    float listY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM;
+    float listHeight = m_screenHeight - listY - Layout::BUTTON_HEIGHT - Layout::MARGIN_LARGE - Layout::SPACING_MEDIUM;
+    float listWidth = m_screenWidth - (Layout::MARGIN_SMALL * 2);
+    renderer->drawRect(Layout::MARGIN_SMALL, listY, listWidth, listHeight, 0.15f, 0.15f, 0.2f, 1.0f);
     
     // Render exercises
     renderExerciseList(renderer);
     
     // End workout button at bottom
-    float endButtonY = m_screenHeight - 80.0f;
-    renderer->drawRect(50.0f, endButtonY, m_screenWidth - 100.0f, 60.0f, 0.6f, 0.2f, 0.2f, 1.0f);
+    if (m_endButton) {
+        m_endButton->render(renderer, m_textRenderer);
+    }
 }
 
 void WorkoutTracker::renderExerciseList(Renderer* renderer) {
     if (m_currentWorkout.exercises.empty()) {
-        // Show "No exercises" message
+        if (m_textRenderer) {
+            float noExTextWidth = m_textRenderer->getTextWidth("NO EXERCISES", 1.0f);
+            float noExTextX = Layout::centerTextX("NO EXERCISES", noExTextWidth, m_screenWidth);
+            m_textRenderer->drawText(noExTextX, Layout::centerY(0, m_screenHeight), "NO EXERCISES", 0.7f, 0.7f, 0.7f, 1.0f, 1.0f);
+        }
         return;
     }
     
-    float itemHeight = 100.0f;
-    float startY = 130.0f;
-    float spacing = 10.0f;
+    float listStartY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM + Layout::PADDING_SMALL;
+    float itemX = Layout::MARGIN_MEDIUM;
+    float itemWidth = m_screenWidth - (Layout::MARGIN_MEDIUM * 2);
     
     for (size_t i = 0; i < m_currentWorkout.exercises.size(); ++i) {
         const Exercise& exercise = m_currentWorkout.exercises[i];
-        float y = startY + i * (itemHeight + spacing);
+        float y = listStartY + i * (Layout::EXERCISE_ITEM_HEIGHT + Layout::SPACING_SMALL);
         
-        // Exercise card
+        // Exercise card with padding
         float alpha = (i == static_cast<size_t>(m_currentExerciseIndex)) ? 1.0f : 0.7f;
-        renderer->drawRect(20.0f, y, m_screenWidth - 40.0f, itemHeight, 0.3f, 0.3f, 0.35f, alpha);
+        renderer->drawRect(itemX, y, itemWidth, Layout::EXERCISE_ITEM_HEIGHT, 0.3f, 0.3f, 0.35f, alpha);
         
-        // Progress indicator (sets completed)
-        float progressWidth = (m_screenWidth - 60.0f) * ((float)m_currentSetIndex / (float)exercise.sets);
-        renderer->drawRect(30.0f, y + 70.0f, progressWidth, 10.0f, 0.2f, 0.7f, 0.3f, 1.0f);
+        // Exercise name and details with proper padding
+        if (m_textRenderer) {
+            float textX = itemX + Layout::PADDING_MEDIUM;
+            m_textRenderer->drawText(textX, y + Layout::PADDING_SMALL, exercise.name, 1.0f, 1.0f, 1.0f, alpha, 1.0f);
+            std::string setsReps = std::to_string(exercise.sets) + "x" + std::to_string(exercise.reps);
+            m_textRenderer->drawText(textX, y + Layout::PADDING_MEDIUM + 10.0f, setsReps, 0.8f, 0.8f, 0.8f, alpha, 0.9f);
+            if (exercise.weight > 0.0f) {
+                std::string weightStr = std::to_string((int)exercise.weight) + "kg";
+                m_textRenderer->drawText(textX, y + Layout::PADDING_MEDIUM + 25.0f, weightStr, 0.7f, 0.7f, 0.7f, alpha, 0.8f);
+            }
+        }
+        
+        // Progress indicator (sets completed) with padding
+        float progressX = itemX + Layout::PADDING_MEDIUM;
+        float progressWidth = (itemWidth - Layout::PADDING_MEDIUM * 2) * ((float)m_currentSetIndex / (float)exercise.sets);
+        float progressY = y + Layout::EXERCISE_ITEM_HEIGHT - Layout::PADDING_SMALL - 8.0f;
+        renderer->drawRect(progressX, progressY, progressWidth, 8.0f, 0.2f, 0.7f, 0.3f, 1.0f);
     }
 }
 

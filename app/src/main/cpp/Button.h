@@ -16,6 +16,7 @@ public:
     void setColor(float r, float g, float b, float a);
     void setPressedColor(float r, float g, float b, float a);
     void setTextColor(float r, float g, float b, float a);
+    void setTextScale(float scale);
     
     void setPressed(bool pressed) { m_pressed = pressed; }
     bool isPressed() const { return m_pressed; }
@@ -35,6 +36,7 @@ private:
     float m_colorR, m_colorG, m_colorB, m_colorA;
     float m_pressedR, m_pressedG, m_pressedB, m_pressedA;
     float m_textR, m_textG, m_textB, m_textA;
+    float m_textScale;
     bool m_pressed;
     float m_cornerRadius;
 };

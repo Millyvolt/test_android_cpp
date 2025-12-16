@@ -21,6 +21,7 @@ Button::Button()
     , m_textG(1.0f)
     , m_textB(1.0f)
     , m_textA(1.0f)
+    , m_textScale(1.0f)
     , m_pressed(false)
     , m_cornerRadius(8.0f)
 {
@@ -61,6 +62,10 @@ void Button::setTextColor(float r, float g, float b, float a) {
     m_textA = a;
 }
 
+void Button::setTextScale(float scale) {
+    m_textScale = scale;
+}
+
 void Button::render(Renderer* renderer, TextRenderer* textRenderer) {
     if (!renderer) return;
     
@@ -82,11 +87,11 @@ void Button::render(Renderer* renderer, TextRenderer* textRenderer) {
     
     // Draw text if available
     if (textRenderer && !m_text.empty()) {
-        float textWidth = textRenderer->getTextWidth(m_text, 1.0f);
-        float textHeight = textRenderer->getTextHeight(1.0f);
+        float textWidth = textRenderer->getTextWidth(m_text, m_textScale);
+        float textHeight = textRenderer->getTextHeight(m_textScale);
         float textX = m_x + (m_width - textWidth) / 2.0f;
         float textY = m_y + (m_height - textHeight) / 2.0f;
-        textRenderer->drawText(textX, textY, m_text, m_textR, m_textG, m_textB, m_textA, 1.0f);
+        textRenderer->drawText(textX, textY, m_text, m_textR, m_textG, m_textB, m_textA, m_textScale);
     }
 }
 
