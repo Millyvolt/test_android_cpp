@@ -51,6 +51,9 @@ public:
     const Workout& getCurrentWorkout() const { return m_currentWorkout; }
     int getElapsedSeconds() const;
     
+    // Bottom inset setter for navigation bar
+    void setBottomInset(int inset) { m_bottomInset = (float)inset; }
+    
 private:
     Workout m_currentWorkout;
     std::vector<Workout> m_workoutHistory;
@@ -60,6 +63,7 @@ private:
     
     float m_screenWidth;
     float m_screenHeight;
+    float m_bottomInset;
     
     void updateButtonLayouts();
     void renderMainScreen(Renderer* renderer);

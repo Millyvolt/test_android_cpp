@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "InputHandler.h"
 #include "WorkoutTracker.h"
+#include <jni.h>
 
 class App {
 public:
@@ -28,8 +29,15 @@ private:
     bool m_windowReady;
     int m_width;
     int m_height;
+    int m_bottomInset;
     
     void processWindowCommand(int32_t cmd);
+    void updateBottomInset();
+    int getBottomInset() const { return m_bottomInset; }
+    
+    // JNI helper methods
+    JavaVM* m_javaVM;
+    JNIEnv* getJNIEnv();
 };
 
 #endif // APP_H

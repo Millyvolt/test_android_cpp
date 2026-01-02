@@ -14,6 +14,7 @@ WorkoutTracker::WorkoutTracker()
     , m_currentSetIndex(0)
     , m_screenWidth(0.0f)
     , m_screenHeight(0.0f)
+    , m_bottomInset(0.0f)
     , m_textRenderer(nullptr)
     , m_startButton(nullptr)
     , m_historyButton(nullptr)
@@ -96,8 +97,8 @@ void WorkoutTracker::updateButtonLayouts() {
         float historyButtonY = buttonY + Layout::BUTTON_HEIGHT_LARGE + Layout::SPACING_MEDIUM;
         m_historyButton->setBounds(Layout::MARGIN_LARGE, historyButtonY, buttonWidth, Layout::BUTTON_HEIGHT_LARGE);
     } else {
-        // Workout screen layout
-        float endButtonY = m_screenHeight - Layout::MARGIN_LARGE - Layout::BUTTON_HEIGHT;
+        // Workout screen layout - account for bottom navigation bar inset
+        float endButtonY = m_screenHeight - m_bottomInset - Layout::MARGIN_LARGE - Layout::BUTTON_HEIGHT;
         float buttonWidth = m_screenWidth - (Layout::MARGIN_LARGE * 2);
         m_endButton->setBounds(Layout::MARGIN_LARGE, endButtonY, buttonWidth, Layout::BUTTON_HEIGHT);
     }
@@ -139,9 +140,9 @@ void WorkoutTracker::renderWorkoutScreen(Renderer* renderer) {
         m_textRenderer->drawText(nameX, Layout::PADDING_SMALL, m_currentWorkout.name, 0.9f, 0.9f, 0.9f, 1.0f, 1.0f);
     }
     
-    // Exercise list area with proper spacing
+    // Exercise list area with proper spacing - account for bottom navigation bar inset
     float listY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM;
-    float listHeight = m_screenHeight - listY - Layout::BUTTON_HEIGHT - Layout::MARGIN_LARGE - Layout::SPACING_MEDIUM;
+    float listHeight = m_screenHeight - listY - m_bottomInset - Layout::BUTTON_HEIGHT - Layout::MARGIN_LARGE - Layout::SPACING_MEDIUM;
     float listWidth = m_screenWidth - (Layout::MARGIN_SMALL * 2);
     renderer->drawRect(Layout::MARGIN_SMALL, listY, listWidth, listHeight, 0.15f, 0.15f, 0.2f, 1.0f);
     
