@@ -15,11 +15,11 @@ public:
     static constexpr float SPACING_LARGE = 30.0f;
     
     // Size constants
-    static constexpr float BUTTON_HEIGHT = 60.0f;
-    static constexpr float BUTTON_HEIGHT_LARGE = 80.0f;
-    static constexpr float TITLE_HEIGHT = 60.0f;
-    static constexpr float HEADER_HEIGHT = 100.0f;
-    static constexpr float EXERCISE_ITEM_HEIGHT = 100.0f;
+    static constexpr float BUTTON_HEIGHT = 120.0f;
+    static constexpr float BUTTON_HEIGHT_LARGE = 240.0f;
+    static constexpr float TITLE_HEIGHT = 120.0f;
+    static constexpr float HEADER_HEIGHT = 200.0f;
+    static constexpr float EXERCISE_ITEM_HEIGHT = 200.0f;
     
     // Helper functions
     static float centerX(float width, float screenWidth) {

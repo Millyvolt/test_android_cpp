@@ -30,19 +30,19 @@ WorkoutTracker::WorkoutTracker()
     m_startButton->setText("START WORKOUT");
     m_startButton->setColor(0.2f, 0.6f, 0.3f, 1.0f);
     m_startButton->setPressedColor(0.3f, 0.7f, 0.4f, 1.0f);
-    m_startButton->setTextScale(5.0f);
+    m_startButton->setTextScale(8.0f);
     
     m_historyButton = new Button();
     m_historyButton->setText("HISTORY");
     m_historyButton->setColor(0.4f, 0.4f, 0.4f, 1.0f);
     m_historyButton->setPressedColor(0.5f, 0.5f, 0.5f, 1.0f);
-    m_historyButton->setTextScale(5.0f);
+    m_historyButton->setTextScale(8.0f);
     
     m_endButton = new Button();
     m_endButton->setText("END WORKOUT");
     m_endButton->setColor(0.6f, 0.2f, 0.2f, 1.0f);
     m_endButton->setPressedColor(0.7f, 0.3f, 0.3f, 1.0f);
-    m_endButton->setTextScale(5.0f);
+    m_endButton->setTextScale(8.0f);
 
     (void)m_debugMode;
 }
@@ -112,7 +112,7 @@ void WorkoutTracker::renderMainScreen(Renderer* renderer) {
     if (m_textRenderer) {
         float titleTextWidth = m_textRenderer->getTextWidth("WORKOUT TRACKER", 1.5f);
         float titleTextX = Layout::centerTextX("WORKOUT TRACKER", titleTextWidth, m_screenWidth);
-        m_textRenderer->drawText(titleTextX, titleY + Layout::PADDING_MEDIUM, "WORKOUT TRACKER", 1.0f, 1.0f, 1.0f, 1.0f, 1.5f);
+        m_textRenderer->drawText(titleTextX, titleY + Layout::PADDING_MEDIUM, "WORKOUT TRACKER", 1.0f, 1.0f, 1.0f, 1.0f, 4.5f);
     }
     
     // Render buttons
@@ -133,11 +133,11 @@ void WorkoutTracker::renderWorkoutScreen(Renderer* renderer) {
     if (m_textRenderer) {
         float timerTextWidth = m_textRenderer->getTextWidth("00:00", 2.0f);
         float timerX = Layout::centerTextX("00:00", timerTextWidth, m_screenWidth);
-        m_textRenderer->drawTime(timerX, Layout::PADDING_LARGE + 10.0f, elapsed, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f);
+        m_textRenderer->drawTime(timerX, Layout::PADDING_LARGE + 90.0f, elapsed, 1.0f, 1.0f, 1.0f, 1.0f, 6.0f);
         
         // Workout name
         float nameX = Layout::MARGIN_MEDIUM;
-        m_textRenderer->drawText(nameX, Layout::PADDING_SMALL, m_currentWorkout.name, 0.9f, 0.9f, 0.9f, 1.0f, 1.0f);
+        m_textRenderer->drawText(nameX, Layout::PADDING_SMALL + 40.0f, m_currentWorkout.name, 0.9f, 0.9f, 0.9f, 1.0f, 6.0f);
     }
     
     // Exercise list area with proper spacing - account for bottom navigation bar inset
@@ -180,9 +180,9 @@ void WorkoutTracker::renderExerciseList(Renderer* renderer) {
         // Exercise name and details with proper padding
         if (m_textRenderer) {
             float textX = itemX + Layout::PADDING_MEDIUM;
-            m_textRenderer->drawText(textX, y + Layout::PADDING_SMALL, exercise.name, 1.0f, 1.0f, 1.0f, alpha, 1.0f);
+            m_textRenderer->drawText(textX, y + Layout::PADDING_SMALL + 30.0f, exercise.name, 1.0f, 1.0f, 1.0f, alpha, 5.0f);
             std::string setsReps = std::to_string(exercise.sets) + "x" + std::to_string(exercise.reps);
-            m_textRenderer->drawText(textX, y + Layout::PADDING_MEDIUM + 10.0f, setsReps, 0.8f, 0.8f, 0.8f, alpha, 0.9f);
+            m_textRenderer->drawText(textX, y + Layout::PADDING_MEDIUM + 80.0f, setsReps, 0.8f, 0.8f, 0.8f, alpha, 6.0f);
             if (exercise.weight > 0.0f) {
                 std::string weightStr = std::to_string((int)exercise.weight) + "kg";
                 m_textRenderer->drawText(textX, y + Layout::PADDING_MEDIUM + 25.0f, weightStr, 0.7f, 0.7f, 0.7f, alpha, 0.8f);

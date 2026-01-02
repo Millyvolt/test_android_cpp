@@ -207,8 +207,9 @@ JNIEnv* App::getJNIEnv() {
 }
 
 void App::updateBottomInset() {
-    // Default fallback value (typically 48-56dp, ~60-80px on most devices)
-    m_bottomInset = 60;
+    // Default fallback value (typically 48-56dp, ~96-168px on high-density screens)
+    // Using 100 pixels as a conservative estimate for modern Android navigation bars
+    m_bottomInset = 100;
     
     if (!m_app || !m_app->activity) {
         LOGI("Using fallback bottom inset: %d (no app/activity)", m_bottomInset);
