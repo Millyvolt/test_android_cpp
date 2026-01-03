@@ -9,12 +9,23 @@ class Renderer;
 class TextRenderer;
 class Button;
 
-struct Exercise {
-    std::string name;
-    int sets;
+struct Set {
     int reps;
     float weight; // in kg
+    bool completed;
+    
+    Set() : reps(0), weight(0.0f), completed(false) {}
+    Set(int r, float w) : reps(r), weight(w), completed(false) {}
+};
+
+struct Exercise {
+    std::string name;
+    std::vector<Set> sets;
+    int defaultReps; // default reps for new sets
+    float defaultWeight; // default weight for new sets
     int restTime; // in seconds
+    
+    Exercise() : defaultReps(0), defaultWeight(0.0f), restTime(60) {}
 };
 
 struct Workout {
@@ -74,6 +85,10 @@ private:
     
     void showExerciseSelectionList();
     void hideExerciseSelectionList();
+    
+    void addSetToExercise(int exerciseIndex);
+    void markSetCompleted(int exerciseIndex, int setIndex);
+    int getCompletedSetsCount(int exerciseIndex) const;
     
     bool isPointInRect(float x, float y, float rectX, float rectY, float rectW, float rectH);
 

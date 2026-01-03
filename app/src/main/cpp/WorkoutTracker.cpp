@@ -206,21 +206,76 @@ void WorkoutTracker::renderExerciseList(Renderer* renderer) {
         float alpha = (i == static_cast<size_t>(m_currentExerciseIndex)) ? 1.0f : 0.7f;
         renderer->drawRect(itemX, y, itemWidth, Layout::EXERCISE_ITEM_HEIGHT, 0.3f, 0.3f, 0.35f, alpha);
         
-        // Exercise name and details with proper padding
         if (m_textRenderer) {
             float textX = itemX + Layout::PADDING_MEDIUM;
-            m_textRenderer->drawText(textX, y + Layout::PADDING_SMALL + 30.0f, exercise.name, 1.0f, 1.0f, 1.0f, alpha, 5.0f);
-            std::string setsReps = std::to_string(exercise.sets) + "x" + std::to_string(exercise.reps);
-            m_textRenderer->drawText(textX, y + Layout::PADDING_MEDIUM + 80.0f, setsReps, 0.8f, 0.8f, 0.8f, alpha, 6.0f);
-            if (exercise.weight > 0.0f) {
-                std::string weightStr = std::to_string((int)exercise.weight) + "kg";
-                m_textRenderer->drawText(textX, y + Layout::PADDING_MEDIUM + 25.0f, weightStr, 0.7f, 0.7f, 0.7f, alpha, 0.8f);
+            float currentY = y + Layout::PADDING_SMALL + 30.0f;
+            
+            // Exercise name
+            m_textRenderer->drawText(textX, currentY, exercise.name, 1.0f, 1.0f, 1.0f, alpha, 5.0f);
+            currentY += 50.0f;
+            
+            // Sets counter and Add Set button
+            int completedSets = getCompletedSetsCount((int)i);
+            int totalSets = (int)exercise.sets.size();
+            std::string setsCounter = std::to_string(completedSets) + "/" + std::to_string(totalSets) + " sets";
+            m_textRenderer->drawText(textX, currentY, setsCounter, 0.9f, 0.9f, 0.9f, alpha, 4.5f);
+            
+            // Add Set button (drawn as a rectangle with text)
+            float addSetButtonX = textX + 200.0f;
+            float addSetButtonY = currentY - 35.0f;
+            float addSetButtonWidth = 140.0f;
+            float addSetButtonHeight = 50.0f;
+            renderer->drawRect(addSetButtonX, addSetButtonY, addSetButtonWidth, addSetButtonHeight, 0.2f, 0.6f, 0.3f, alpha);
+            m_textRenderer->drawText(addSetButtonX + 10.0f, addSetButtonY + 15.0f, "Add Set", 1.0f, 1.0f, 1.0f, alpha, 3.5f);
+            
+            currentY += 50.0f;
+            
+            // Reps field with increment/decrement buttons
+            // Find first incomplete set or use first set's reps
+            int currentReps = exercise.defaultReps;
+            if (!exercise.sets.empty()) {
+                // Find first incomplete set
+                bool foundIncomplete = false;
+                for (size_t j = 0; j < exercise.sets.size(); ++j) {
+                    if (!exercise.sets[j].completed) {
+                        currentReps = exercise.sets[j].reps;
+                        foundIncomplete = true;
+                        break;
+                    }
+                }
+                if (!foundIncomplete && !exercise.sets.empty()) {
+                    currentReps = exercise.sets[0].reps;
+                }
+            }
+            
+            std::string repsLabel = "Reps: " + std::to_string(currentReps);
+            m_textRenderer->drawText(textX, currentY, repsLabel, 0.9f, 0.9f, 0.9f, alpha, 4.5f);
+            
+            // Increment button (↑)
+            float incButtonX = textX + 150.0f;
+            float incButtonY = currentY - 35.0f;
+            float buttonSize = 40.0f;
+            renderer->drawRect(incButtonX, incButtonY, buttonSize, buttonSize, 0.3f, 0.5f, 0.7f, alpha);
+            m_textRenderer->drawText(incButtonX + 12.0f, incButtonY + 10.0f, "↑", 1.0f, 1.0f, 1.0f, alpha, 4.0f);
+            
+            // Decrement button (↓)
+            float decButtonX = incButtonX + buttonSize + Layout::SPACING_SMALL;
+            renderer->drawRect(decButtonX, incButtonY, buttonSize, buttonSize, 0.5f, 0.3f, 0.3f, alpha);
+            m_textRenderer->drawText(decButtonX + 12.0f, incButtonY + 10.0f, "↓", 1.0f, 1.0f, 1.0f, alpha, 4.0f);
+            
+            // Weight display if applicable
+            if (exercise.defaultWeight > 0.0f) {
+                currentY += 45.0f;
+                std::string weightStr = std::to_string((int)exercise.defaultWeight) + "kg";
+                m_textRenderer->drawText(textX, currentY, weightStr, 0.7f, 0.7f, 0.7f, alpha, 4.0f);
             }
         }
         
         // Progress indicator (sets completed) with padding
         float progressX = itemX + Layout::PADDING_MEDIUM;
-        float progressWidth = (itemWidth - Layout::PADDING_MEDIUM * 2) * ((float)m_currentSetIndex / (float)exercise.sets);
+        int totalSets = (int)exercise.sets.size();
+        float progressRatio = totalSets > 0 ? (float)getCompletedSetsCount((int)i) / (float)totalSets : 0.0f;
+        float progressWidth = (itemWidth - Layout::PADDING_MEDIUM * 2) * progressRatio;
         float progressY = y + Layout::EXERCISE_ITEM_HEIGHT - Layout::PADDING_SMALL - 8.0f;
         renderer->drawRect(progressX, progressY, progressWidth, 8.0f, 0.2f, 0.7f, 0.3f, 1.0f);
     }
@@ -278,6 +333,38 @@ void WorkoutTracker::showExerciseSelectionList() {
 
 void WorkoutTracker::hideExerciseSelectionList() {
     m_showingExerciseList = false;
+}
+
+void WorkoutTracker::addSetToExercise(int exerciseIndex) {
+    if (exerciseIndex >= 0 && exerciseIndex < (int)m_currentWorkout.exercises.size()) {
+        Exercise& exercise = m_currentWorkout.exercises[exerciseIndex];
+        exercise.sets.push_back(Set(exercise.defaultReps, exercise.defaultWeight));
+        LOGI("Added set to exercise: %s (total sets: %d)", exercise.name.c_str(), (int)exercise.sets.size());
+    }
+}
+
+void WorkoutTracker::markSetCompleted(int exerciseIndex, int setIndex) {
+    if (exerciseIndex >= 0 && exerciseIndex < (int)m_currentWorkout.exercises.size()) {
+        Exercise& exercise = m_currentWorkout.exercises[exerciseIndex];
+        if (setIndex >= 0 && setIndex < (int)exercise.sets.size()) {
+            exercise.sets[setIndex].completed = true;
+            LOGI("Marked set %d as completed for exercise: %s", setIndex + 1, exercise.name.c_str());
+        }
+    }
+}
+
+int WorkoutTracker::getCompletedSetsCount(int exerciseIndex) const {
+    if (exerciseIndex >= 0 && exerciseIndex < (int)m_currentWorkout.exercises.size()) {
+        const Exercise& exercise = m_currentWorkout.exercises[exerciseIndex];
+        int completed = 0;
+        for (size_t i = 0; i < exercise.sets.size(); ++i) {
+            if (exercise.sets[i].completed) {
+                completed++;
+            }
+        }
+        return completed;
+    }
+    return 0;
 }
 
 void WorkoutTracker::renderDebugOverlay(Renderer* renderer) {
@@ -367,7 +454,68 @@ void WorkoutTracker::onTouchDown(float x, float y) {
                 
                 for (size_t i = 0; i < m_currentWorkout.exercises.size(); ++i) {
                     float itemY = listStartY + i * (Layout::EXERCISE_ITEM_HEIGHT + Layout::SPACING_SMALL);
+                    
                     if (isPointInRect(x, y, itemX, itemY, itemWidth, Layout::EXERCISE_ITEM_HEIGHT)) {
+                        Exercise& exercise = m_currentWorkout.exercises[i];
+                        float textX = itemX + Layout::PADDING_MEDIUM;
+                        float currentY = itemY + Layout::PADDING_SMALL + 30.0f + 50.0f; // Position after exercise name
+                        
+                        // Check for Add Set button click
+                        float addSetButtonX = textX + 200.0f;
+                        float addSetButtonY = currentY - 35.0f;
+                        float addSetButtonWidth = 140.0f;
+                        float addSetButtonHeight = 50.0f;
+                        
+                        if (isPointInRect(x, y, addSetButtonX, addSetButtonY, addSetButtonWidth, addSetButtonHeight)) {
+                            addSetToExercise((int)i);
+                            break;
+                        }
+                        
+                        // Check for Reps increment button (↑)
+                        float incButtonX = textX + 150.0f;
+                        float incButtonY = currentY + 50.0f - 35.0f; // Position for reps field
+                        float buttonSize = 40.0f;
+                        
+                        if (isPointInRect(x, y, incButtonX, incButtonY, buttonSize, buttonSize)) {
+                            // Increment reps for first incomplete set or first set
+                            if (!exercise.sets.empty()) {
+                                bool found = false;
+                                for (size_t j = 0; j < exercise.sets.size(); ++j) {
+                                    if (!exercise.sets[j].completed) {
+                                        exercise.sets[j].reps++;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    exercise.sets[0].reps++;
+                                }
+                            }
+                            break;
+                        }
+                        
+                        // Check for Reps decrement button (↓)
+                        float decButtonX = incButtonX + buttonSize + Layout::SPACING_SMALL;
+                        
+                        if (isPointInRect(x, y, decButtonX, incButtonY, buttonSize, buttonSize)) {
+                            // Decrement reps for first incomplete set or first set (minimum 1)
+                            if (!exercise.sets.empty()) {
+                                bool found = false;
+                                for (size_t j = 0; j < exercise.sets.size(); ++j) {
+                                    if (!exercise.sets[j].completed && exercise.sets[j].reps > 1) {
+                                        exercise.sets[j].reps--;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found && exercise.sets[0].reps > 1) {
+                                    exercise.sets[0].reps--;
+                                }
+                            }
+                            break;
+                        }
+                        
+                        // Otherwise, just select the exercise
                         m_currentExerciseIndex = i;
                         m_currentSetIndex = 0;
                         break;
@@ -428,13 +576,17 @@ void WorkoutTracker::endWorkout() {
 void WorkoutTracker::addExercise(const std::string& name, int sets, int reps, float weight) {
     Exercise exercise;
     exercise.name = name;
-    exercise.sets = sets;
-    exercise.reps = reps;
-    exercise.weight = weight;
+    exercise.defaultReps = reps;
+    exercise.defaultWeight = weight;
     exercise.restTime = 60; // Default 60 seconds rest
     
+    // Initialize sets vector with specified number of sets
+    for (int i = 0; i < sets; ++i) {
+        exercise.sets.push_back(Set(reps, weight));
+    }
+    
     m_currentWorkout.exercises.push_back(exercise);
-    LOGI("Added exercise: %s", name.c_str());
+    LOGI("Added exercise: %s with %d sets", name.c_str(), sets);
 }
 
 void WorkoutTracker::completeSet(int exerciseIndex) {
