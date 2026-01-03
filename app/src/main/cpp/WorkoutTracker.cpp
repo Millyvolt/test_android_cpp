@@ -477,8 +477,8 @@ void WorkoutTracker::onTouchDown(float x, float y) {
                         
                         // Check for Add Set button click using Button class
                         if (m_addSetButton) {
-                            float addSetButtonX = textX + 200.0f;
-                            float addSetButtonY = currentY - 35.0f;
+                            float addSetButtonX = textX + 500.0f;
+                            float addSetButtonY = currentY - 65.0f;
                             m_addSetButton->setBounds(addSetButtonX, addSetButtonY, Layout::ADD_SET_BUTTON_WIDTH, Layout::ADD_SET_BUTTON_HEIGHT);
                             
                             if (m_addSetButton->containsPoint(x, y)) {
