@@ -69,13 +69,19 @@ private:
     void renderMainScreen(Renderer* renderer);
     void renderWorkoutScreen(Renderer* renderer);
     void renderExerciseList(Renderer* renderer);
+    void renderExerciseSelectionList(Renderer* renderer);
     void renderDebugOverlay(Renderer* renderer);
+    
+    void showExerciseSelectionList();
+    void hideExerciseSelectionList();
     
     bool isPointInRect(float x, float y, float rectX, float rectY, float rectW, float rectH);
 
     TextRenderer * m_textRenderer;
-    Button * m_startButton, * m_historyButton, * m_endButton;
+    Button * m_startButton, * m_historyButton, * m_endButton, * m_chooseExerciseButton;
     bool m_debugMode;
+    bool m_showingExerciseList;
+    std::vector<std::string> m_availableExercises;
     double m_lastTouchX, m_lastTouchY;
 };
 

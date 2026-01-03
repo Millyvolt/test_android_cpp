@@ -19,7 +19,9 @@ WorkoutTracker::WorkoutTracker()
     , m_startButton(nullptr)
     , m_historyButton(nullptr)
     , m_endButton(nullptr)
+    , m_chooseExerciseButton(nullptr)
     , m_debugMode(false)
+    , m_showingExerciseList(false)
     , m_lastTouchX(0.0f)
     , m_lastTouchY(0.0f)
 {
@@ -43,6 +45,17 @@ WorkoutTracker::WorkoutTracker()
     m_endButton->setColor(0.6f, 0.2f, 0.2f, 1.0f);
     m_endButton->setPressedColor(0.7f, 0.3f, 0.3f, 1.0f);
     m_endButton->setTextScale(8.0f);
+    
+    m_chooseExerciseButton = new Button();
+    m_chooseExerciseButton->setText("CHOOSE EXERCISE");
+    m_chooseExerciseButton->setColor(0.3f, 0.5f, 0.7f, 1.0f);
+    m_chooseExerciseButton->setPressedColor(0.4f, 0.6f, 0.8f, 1.0f);
+    m_chooseExerciseButton->setTextScale(7.0f);
+    
+    // Populate available exercises
+    m_availableExercises.push_back("Push-ups");
+    m_availableExercises.push_back("Squats");
+    m_availableExercises.push_back("Plank");
 
     (void)m_debugMode;
 }
@@ -85,7 +98,7 @@ void WorkoutTracker::render(Renderer* renderer) {
 }
 
 void WorkoutTracker::updateButtonLayouts() {
-    if (!m_startButton || !m_historyButton || !m_endButton) return;
+    if (!m_startButton || !m_historyButton || !m_endButton || !m_chooseExerciseButton) return;
     
     if (!m_currentWorkout.isActive) {
         // Main screen layout with proper spacing
@@ -101,6 +114,10 @@ void WorkoutTracker::updateButtonLayouts() {
         float endButtonY = m_screenHeight - m_bottomInset - Layout::MARGIN_LARGE - Layout::BUTTON_HEIGHT;
         float buttonWidth = m_screenWidth - (Layout::MARGIN_LARGE * 2);
         m_endButton->setBounds(Layout::MARGIN_LARGE, endButtonY, buttonWidth, Layout::BUTTON_HEIGHT);
+        
+        // Position Choose Exercise button below header
+        float chooseButtonY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM;
+        m_chooseExerciseButton->setBounds(Layout::MARGIN_LARGE, chooseButtonY, buttonWidth, Layout::BUTTON_HEIGHT);
     }
 }
 
@@ -125,6 +142,12 @@ void WorkoutTracker::renderMainScreen(Renderer* renderer) {
 }
 
 void WorkoutTracker::renderWorkoutScreen(Renderer* renderer) {
+    // If showing exercise selection list, render it and return
+    if (m_showingExerciseList) {
+        renderExerciseSelectionList(renderer);
+        return;
+    }
+    
     // Header with workout name and timer
     renderer->drawRect(0.0f, 0.0f, m_screenWidth, Layout::HEADER_HEIGHT, 0.2f, 0.3f, 0.5f, 1.0f);
     
@@ -140,8 +163,13 @@ void WorkoutTracker::renderWorkoutScreen(Renderer* renderer) {
         m_textRenderer->drawText(nameX, Layout::PADDING_SMALL + 40.0f, m_currentWorkout.name, 0.9f, 0.9f, 0.9f, 1.0f, 6.0f);
     }
     
-    // Exercise list area with proper spacing - account for bottom navigation bar inset
-    float listY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM;
+    // Choose Exercise button
+    if (m_chooseExerciseButton) {
+        m_chooseExerciseButton->render(renderer, m_textRenderer);
+    }
+    
+    // Exercise list area with proper spacing - account for Choose Exercise button and bottom navigation bar inset
+    float listY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM + Layout::BUTTON_HEIGHT + Layout::SPACING_SMALL;
     float listHeight = m_screenHeight - listY - m_bottomInset - Layout::BUTTON_HEIGHT - Layout::MARGIN_LARGE - Layout::SPACING_MEDIUM;
     float listWidth = m_screenWidth - (Layout::MARGIN_SMALL * 2);
     renderer->drawRect(Layout::MARGIN_SMALL, listY, listWidth, listHeight, 0.15f, 0.15f, 0.2f, 1.0f);
@@ -165,7 +193,8 @@ void WorkoutTracker::renderExerciseList(Renderer* renderer) {
         return;
     }
     
-    float listStartY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM + Layout::PADDING_SMALL;
+    // Account for Choose Exercise button position
+    float listStartY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM + Layout::BUTTON_HEIGHT + Layout::SPACING_SMALL + Layout::PADDING_SMALL;
     float itemX = Layout::MARGIN_MEDIUM;
     float itemWidth = m_screenWidth - (Layout::MARGIN_MEDIUM * 2);
     
@@ -195,6 +224,60 @@ void WorkoutTracker::renderExerciseList(Renderer* renderer) {
         float progressY = y + Layout::EXERCISE_ITEM_HEIGHT - Layout::PADDING_SMALL - 8.0f;
         renderer->drawRect(progressX, progressY, progressWidth, 8.0f, 0.2f, 0.7f, 0.3f, 1.0f);
     }
+}
+
+void WorkoutTracker::renderExerciseSelectionList(Renderer* renderer) {
+    // Draw semi-transparent overlay
+    renderer->drawRect(0.0f, 0.0f, m_screenWidth, m_screenHeight, 0.0f, 0.0f, 0.0f, 0.7f);
+    
+    // Draw modal background
+    float modalWidth = m_screenWidth - (Layout::MARGIN_LARGE * 2);
+    float modalHeight = m_screenHeight * 0.6f;
+    float modalX = Layout::MARGIN_LARGE;
+    float modalY = Layout::centerY(modalHeight, m_screenHeight);
+    
+    renderer->drawRect(modalX, modalY, modalWidth, modalHeight, 0.2f, 0.2f, 0.25f, 1.0f);
+    
+    // Draw title
+    if (m_textRenderer) {
+        float titleY = modalY + Layout::PADDING_LARGE;
+        float titleTextWidth = m_textRenderer->getTextWidth("SELECT EXERCISE", 1.2f);
+        float titleTextX = Layout::centerTextX("SELECT EXERCISE", titleTextWidth, m_screenWidth);
+        m_textRenderer->drawText(titleTextX, titleY + 40.0f, "SELECT EXERCISE", 1.0f, 1.0f, 1.0f, 1.0f, 6.0f);
+    }
+    
+    // Draw exercise list
+    float listStartY = modalY + Layout::PADDING_LARGE * 2 + 60.0f;
+    float itemX = modalX + Layout::PADDING_MEDIUM;
+    float itemWidth = modalWidth - (Layout::PADDING_MEDIUM * 2);
+    float itemHeight = 120.0f;
+    float itemSpacing = Layout::SPACING_SMALL;
+    
+    for (size_t i = 0; i < m_availableExercises.size(); ++i) {
+        float itemY = listStartY + i * (itemHeight + itemSpacing);
+        
+        // Make sure items fit in modal
+        if (itemY + itemHeight > modalY + modalHeight - Layout::PADDING_MEDIUM) {
+            break;
+        }
+        
+        // Draw exercise item background
+        renderer->drawRect(itemX, itemY, itemWidth, itemHeight, 0.35f, 0.35f, 0.4f, 1.0f);
+        
+        // Draw exercise name
+        if (m_textRenderer) {
+            float textX = itemX + Layout::PADDING_MEDIUM;
+            m_textRenderer->drawText(textX, itemY + Layout::PADDING_MEDIUM + 40.0f, m_availableExercises[i], 1.0f, 1.0f, 1.0f, 1.0f, 5.0f);
+        }
+    }
+}
+
+void WorkoutTracker::showExerciseSelectionList() {
+    m_showingExerciseList = true;
+}
+
+void WorkoutTracker::hideExerciseSelectionList() {
+    m_showingExerciseList = false;
 }
 
 void WorkoutTracker::renderDebugOverlay(Renderer* renderer) {
@@ -227,21 +310,68 @@ void WorkoutTracker::onTouchDown(float x, float y) {
         }
     } else {
         // Workout screen
-        if (m_endButton && m_endButton->containsPoint(x, y)) {
-            m_endButton->setPressed(true);
-            endWorkout();
-        } else {
-            // Check if tapping on an exercise
-            float listStartY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM + Layout::PADDING_SMALL;
-            float itemX = Layout::MARGIN_MEDIUM;
-            float itemWidth = m_screenWidth - (Layout::MARGIN_MEDIUM * 2);
+        if (m_showingExerciseList) {
+            // Exercise selection list is showing
+            // Check if clicking on an exercise in the selection list
+            float modalWidth = m_screenWidth - (Layout::MARGIN_LARGE * 2);
+            float modalHeight = m_screenHeight * 0.6f;
+            float modalX = Layout::MARGIN_LARGE;
+            float modalY = Layout::centerY(modalHeight, m_screenHeight);
             
-            for (size_t i = 0; i < m_currentWorkout.exercises.size(); ++i) {
-                float itemY = listStartY + i * (Layout::EXERCISE_ITEM_HEIGHT + Layout::SPACING_SMALL);
-                if (isPointInRect(x, y, itemX, itemY, itemWidth, Layout::EXERCISE_ITEM_HEIGHT)) {
-                    m_currentExerciseIndex = i;
-                    m_currentSetIndex = 0;
+            float listStartY = modalY + Layout::PADDING_LARGE * 2 + 60.0f;
+            float itemX = modalX + Layout::PADDING_MEDIUM;
+            float itemWidth = modalWidth - (Layout::PADDING_MEDIUM * 2);
+            float itemHeight = 120.0f;
+            float itemSpacing = Layout::SPACING_SMALL;
+            
+            for (size_t i = 0; i < m_availableExercises.size(); ++i) {
+                float itemY = listStartY + i * (itemHeight + itemSpacing);
+                
+                // Make sure item is within modal bounds
+                if (itemY + itemHeight > modalY + modalHeight - Layout::PADDING_MEDIUM) {
                     break;
+                }
+                
+                if (isPointInRect(x, y, itemX, itemY, itemWidth, itemHeight)) {
+                    // Add selected exercise with default values
+                    std::string exerciseName = m_availableExercises[i];
+                    if (exerciseName == "Push-ups") {
+                        addExercise(exerciseName, 3, 10, 0.0f);
+                    } else if (exerciseName == "Squats") {
+                        addExercise(exerciseName, 3, 15, 0.0f);
+                    } else if (exerciseName == "Plank") {
+                        addExercise(exerciseName, 3, 30, 0.0f);
+                    }
+                    hideExerciseSelectionList();
+                    break;
+                }
+            }
+            
+            // Check if clicking outside modal to close
+            if (!isPointInRect(x, y, modalX, modalY, modalWidth, modalHeight)) {
+                hideExerciseSelectionList();
+            }
+        } else {
+            // Normal workout screen
+            if (m_endButton && m_endButton->containsPoint(x, y)) {
+                m_endButton->setPressed(true);
+                endWorkout();
+            } else if (m_chooseExerciseButton && m_chooseExerciseButton->containsPoint(x, y)) {
+                m_chooseExerciseButton->setPressed(true);
+                showExerciseSelectionList();
+            } else {
+                // Check if tapping on an exercise in the workout
+                float listStartY = Layout::HEADER_HEIGHT + Layout::SPACING_MEDIUM + Layout::BUTTON_HEIGHT + Layout::SPACING_SMALL + Layout::PADDING_SMALL;
+                float itemX = Layout::MARGIN_MEDIUM;
+                float itemWidth = m_screenWidth - (Layout::MARGIN_MEDIUM * 2);
+                
+                for (size_t i = 0; i < m_currentWorkout.exercises.size(); ++i) {
+                    float itemY = listStartY + i * (Layout::EXERCISE_ITEM_HEIGHT + Layout::SPACING_SMALL);
+                    if (isPointInRect(x, y, itemX, itemY, itemWidth, Layout::EXERCISE_ITEM_HEIGHT)) {
+                        m_currentExerciseIndex = i;
+                        m_currentSetIndex = 0;
+                        break;
+                    }
                 }
             }
         }
@@ -264,8 +394,13 @@ void WorkoutTracker::onTouchCancel() {
 
 void WorkoutTracker::onBackPressed() {
     if (m_currentWorkout.isActive) {
-        // Pause or end workout on back press
-        endWorkout();
+        if (m_showingExerciseList) {
+            // Close exercise selection list
+            hideExerciseSelectionList();
+        } else {
+            // End workout on back press
+            endWorkout();
+        }
     }
 }
 
@@ -276,11 +411,7 @@ void WorkoutTracker::startWorkout(const std::string& name) {
     m_currentWorkout.isActive = true;
     m_currentExerciseIndex = 0;
     m_currentSetIndex = 0;
-    
-    // Add some default exercises for demo
-    addExercise("Push-ups", 3, 10, 0.0f);
-    addExercise("Squats", 3, 15, 0.0f);
-    addExercise("Plank", 3, 30, 0.0f);
+    m_showingExerciseList = false;
     
     LOGI("Started workout: %s", name.c_str());
 }
