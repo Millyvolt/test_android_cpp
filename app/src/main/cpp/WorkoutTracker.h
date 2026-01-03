@@ -93,7 +93,7 @@ private:
     bool isPointInRect(float x, float y, float rectX, float rectY, float rectW, float rectH);
 
     TextRenderer * m_textRenderer;
-    Button * m_startButton, * m_historyButton, * m_endButton, * m_chooseExerciseButton;
+    Button * m_startButton, * m_historyButton, * m_endButton, * m_chooseExerciseButton, * m_addSetButton;
     bool m_debugMode;
     bool m_showingExerciseList;
     std::vector<std::string> m_availableExercises;

@@ -20,6 +20,7 @@ WorkoutTracker::WorkoutTracker()
     , m_historyButton(nullptr)
     , m_endButton(nullptr)
     , m_chooseExerciseButton(nullptr)
+    , m_addSetButton(nullptr)
     , m_debugMode(false)
     , m_showingExerciseList(false)
     , m_lastTouchX(0.0f)
@@ -52,6 +53,13 @@ WorkoutTracker::WorkoutTracker()
     m_chooseExerciseButton->setPressedColor(0.4f, 0.6f, 0.8f, 1.0f);
     m_chooseExerciseButton->setTextScale(7.0f);
     
+    m_addSetButton = new Button();
+    m_addSetButton->setText("Add Set");
+    m_addSetButton->setColor(0.2f, 0.6f, 0.3f, 1.0f);
+    m_addSetButton->setPressedColor(0.3f, 0.7f, 0.4f, 1.0f);
+    m_addSetButton->setTextColor(1.0f, 1.0f, 1.0f, 1.0f);
+    m_addSetButton->setTextScale(4.0f);
+    
     // Populate available exercises
     m_availableExercises.push_back("Push-ups");
     m_availableExercises.push_back("Squats");
@@ -61,6 +69,13 @@ WorkoutTracker::WorkoutTracker()
 }
 
 WorkoutTracker::~WorkoutTracker() {
+    // Cleanup buttons
+    if (m_startButton) delete m_startButton;
+    if (m_historyButton) delete m_historyButton;
+    if (m_endButton) delete m_endButton;
+    if (m_chooseExerciseButton) delete m_chooseExerciseButton;
+    if (m_addSetButton) delete m_addSetButton;
+    if (m_textRenderer) delete m_textRenderer;
 }
 
 void WorkoutTracker::update() {
@@ -220,13 +235,13 @@ void WorkoutTracker::renderExerciseList(Renderer* renderer) {
             std::string setsCounter = std::to_string(completedSets) + "/" + std::to_string(totalSets) + " sets";
             m_textRenderer->drawText(textX, currentY, setsCounter, 0.9f, 0.9f, 0.9f, alpha, 4.5f);
             
-            // Add Set button (drawn as a rectangle with text)
-            float addSetButtonX = textX + 200.0f;
-            float addSetButtonY = currentY - 35.0f;
-            float addSetButtonWidth = 140.0f;
-            float addSetButtonHeight = 50.0f;
-            renderer->drawRect(addSetButtonX, addSetButtonY, addSetButtonWidth, addSetButtonHeight, 0.2f, 0.6f, 0.3f, alpha);
-            m_textRenderer->drawText(addSetButtonX + 10.0f, addSetButtonY + 15.0f, "Add Set", 1.0f, 1.0f, 1.0f, alpha, 3.5f);
+            // Add Set button using Button class
+            if (m_addSetButton) {
+                float addSetButtonX = textX + 500.0f;
+                float addSetButtonY = currentY - 65.0f;
+                m_addSetButton->setBounds(addSetButtonX, addSetButtonY, Layout::ADD_SET_BUTTON_WIDTH, Layout::ADD_SET_BUTTON_HEIGHT);
+                m_addSetButton->render(renderer, m_textRenderer);
+            }
             
             currentY += 50.0f;
             
@@ -460,15 +475,17 @@ void WorkoutTracker::onTouchDown(float x, float y) {
                         float textX = itemX + Layout::PADDING_MEDIUM;
                         float currentY = itemY + Layout::PADDING_SMALL + 30.0f + 50.0f; // Position after exercise name
                         
-                        // Check for Add Set button click
-                        float addSetButtonX = textX + 200.0f;
-                        float addSetButtonY = currentY - 35.0f;
-                        float addSetButtonWidth = 140.0f;
-                        float addSetButtonHeight = 50.0f;
-                        
-                        if (isPointInRect(x, y, addSetButtonX, addSetButtonY, addSetButtonWidth, addSetButtonHeight)) {
-                            addSetToExercise((int)i);
-                            break;
+                        // Check for Add Set button click using Button class
+                        if (m_addSetButton) {
+                            float addSetButtonX = textX + 200.0f;
+                            float addSetButtonY = currentY - 35.0f;
+                            m_addSetButton->setBounds(addSetButtonX, addSetButtonY, Layout::ADD_SET_BUTTON_WIDTH, Layout::ADD_SET_BUTTON_HEIGHT);
+                            
+                            if (m_addSetButton->containsPoint(x, y)) {
+                                m_addSetButton->setPressed(true);
+                                addSetToExercise((int)i);
+                                break;
+                            }
                         }
                         
                         // Check for Reps increment button (↑)
