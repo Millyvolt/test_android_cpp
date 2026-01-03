@@ -27,6 +27,9 @@ WorkoutTracker::WorkoutTracker()
     , m_showingExerciseList(false)
     , m_lastTouchX(0.0f)
     , m_lastTouchY(0.0f)
+    , m_buttonPressTime()
+    , m_lastPressedButton(nullptr)
+    , m_buttonPressPending(false)
 {
     m_currentWorkout.isActive = false;
     m_textRenderer = new TextRenderer();
@@ -63,14 +66,14 @@ WorkoutTracker::WorkoutTracker()
     m_addSetButton->setTextScale(4.0f);
     
     m_repsIncrementButton = new Button();
-    m_repsIncrementButton->setText("↑");
+    m_repsIncrementButton->setText(REPS_INCR_BUT_TEXT);
     m_repsIncrementButton->setColor(0.3f, 0.5f, 0.7f, 1.0f);
     m_repsIncrementButton->setPressedColor(0.4f, 0.6f, 0.8f, 1.0f);
     m_repsIncrementButton->setTextColor(1.0f, 1.0f, 1.0f, 1.0f);
     m_repsIncrementButton->setTextScale(4.0f);
     
     m_repsDecrementButton = new Button();
-    m_repsDecrementButton->setText("↓");
+    m_repsDecrementButton->setText(REPS_DECR_BUT_TEXT);
     m_repsDecrementButton->setColor(0.5f, 0.3f, 0.3f, 1.0f);
     m_repsDecrementButton->setPressedColor(0.6f, 0.4f, 0.4f, 1.0f);
     m_repsDecrementButton->setTextColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -98,6 +101,18 @@ WorkoutTracker::~WorkoutTracker() {
 
 void WorkoutTracker::update() {
     // Update workout timer, etc.
+    
+    // Handle delayed button state reset
+    if (m_buttonPressPending && m_lastPressedButton) {
+        auto now = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_buttonPressTime);
+        
+        if (elapsed.count() >= BUT_LIT_DELAY_MS) { // 0.5 seconds
+            m_lastPressedButton->setPressed(false);
+            m_buttonPressPending = false;
+            m_lastPressedButton = nullptr;
+        }
+    }
 }
 
 void WorkoutTracker::render(Renderer* renderer) {
@@ -334,9 +349,9 @@ void WorkoutTracker::renderExerciseSelectionList(Renderer* renderer) {
     // Draw title
     if (m_textRenderer) {
         float titleY = modalY + Layout::PADDING_LARGE;
-        float titleTextWidth = m_textRenderer->getTextWidth("SELECT EXERCISE", 1.2f);
-        float titleTextX = Layout::centerTextX("SELECT EXERCISE", titleTextWidth, m_screenWidth);
-        m_textRenderer->drawText(titleTextX, titleY + 40.0f, "SELECT EXERCISE", 1.0f, 1.0f, 1.0f, 1.0f, 6.0f);
+        float titleTextWidth = m_textRenderer->getTextWidth(SELECT_EXERCISE, 1.2f);
+        float titleTextX = Layout::centerTextX(SELECT_EXERCISE, titleTextWidth, m_screenWidth);
+        m_textRenderer->drawText(titleTextX - 200.0f, titleY + 10.0f,SELECT_EXERCISE, 1.0f, 1.0f, 1.0f, 1.0f, 6.0f);
     }
     
     // Draw exercise list
@@ -508,6 +523,9 @@ void WorkoutTracker::onTouchDown(float x, float y) {
                             
                             if (m_addSetButton->containsPoint(x, y)) {
                                 m_addSetButton->setPressed(true);
+                                m_lastPressedButton = m_addSetButton;
+                                m_buttonPressTime = std::chrono::system_clock::now();
+                                m_buttonPressPending = false; // Will be set on touch up
                                 addSetToExercise((int)i);
                                 break;
                             }
@@ -523,6 +541,9 @@ void WorkoutTracker::onTouchDown(float x, float y) {
                             
                             if (m_repsIncrementButton->containsPoint(x, y)) {
                                 m_repsIncrementButton->setPressed(true);
+                                m_lastPressedButton = m_repsIncrementButton;
+                                m_buttonPressTime = std::chrono::system_clock::now();
+                                m_buttonPressPending = false; // Will be set on touch up
                                 // Increment reps for first incomplete set or first set
                                 if (!exercise.sets.empty()) {
                                     bool found = false;
@@ -550,6 +571,9 @@ void WorkoutTracker::onTouchDown(float x, float y) {
                             
                             if (m_repsDecrementButton->containsPoint(x, y)) {
                                 m_repsDecrementButton->setPressed(true);
+                                m_lastPressedButton = m_repsDecrementButton;
+                                m_buttonPressTime = std::chrono::system_clock::now();
+                                m_buttonPressPending = false; // Will be set on touch up
                                 // Decrement reps for first incomplete set or first set (minimum 1)
                                 if (!exercise.sets.empty()) {
                                     bool found = false;
@@ -580,8 +604,14 @@ void WorkoutTracker::onTouchDown(float x, float y) {
 }
 
 void WorkoutTracker::onTouchUp(float x, float y) {
-    // Handle touch up events if needed
+    // Handle touch up events - initiate delayed button reset
     (void)x; (void)y;
+    
+    if (m_lastPressedButton != nullptr) {
+        // Touch released, start the 0.5 second delay timer
+        m_buttonPressTime = std::chrono::system_clock::now();
+        m_buttonPressPending = true;
+    }
 }
 
 void WorkoutTracker::onTouchMove(float x, float y, float dx, float dy) {

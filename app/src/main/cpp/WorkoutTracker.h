@@ -5,6 +5,11 @@
 #include <vector>
 #include <chrono>
 
+#define SELECT_EXERCISE         "SELECT EXERCISE"   // "ВЫБОР УПРАЖНЕНИЯ"
+#define REPS_INCR_BUT_TEXT      "+"  /*"↑"*/
+#define REPS_DECR_BUT_TEXT      "-"  /*"↓"*/
+#define BUT_LIT_DELAY_MS        30
+
 class Renderer;
 class TextRenderer;
 class Button;
@@ -99,6 +104,11 @@ private:
     bool m_showingExerciseList;
     std::vector<std::string> m_availableExercises;
     double m_lastTouchX, m_lastTouchY;
+    
+    // Button press state tracking
+    std::chrono::system_clock::time_point m_buttonPressTime;
+    Button* m_lastPressedButton;
+    bool m_buttonPressPending;
 };
 
 #endif // WORKOUT_TRACKER_H

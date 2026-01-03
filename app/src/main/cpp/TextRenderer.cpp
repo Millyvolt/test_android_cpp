@@ -48,6 +48,12 @@ static const unsigned char font_bitmap[][7] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // Space
     // Colon
     {0x00, 0x04, 0x00, 0x00, 0x00, 0x04, 0x00}, // :
+    // Plus
+    {0x00, 0x04, 0x04, 0x1F, 0x04, 0x04, 0x00}, // +
+    // Minus
+    {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00}, // -
+    // Slash
+    {0x01, 0x01, 0x02, 0x04, 0x08, 0x10, 0x10}, // /
 };
 
 TextRenderer::TextRenderer()
@@ -140,9 +146,15 @@ void TextRenderer::drawChar(char c, float x, float y, float r, float g, float b,
         charIndex = 36;
     } else if (c == ':') {
         charIndex = 37;
+    } else if (c == '+') {
+        charIndex = 38;
+    } else if (c == '-') {
+        charIndex = 39;
+    } else if (c == '/') {
+        charIndex = 40;
     }
     
-    if (charIndex < 0 || charIndex >= 38) {
+    if (charIndex < 0 || charIndex >= 41) {
         return;
     }
     
