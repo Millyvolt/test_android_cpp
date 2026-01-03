@@ -21,7 +21,8 @@ public:
     static constexpr float HEADER_HEIGHT = 200.0f;
     static constexpr float EXERCISE_ITEM_HEIGHT = 200.0f;
     static constexpr float ADD_SET_BUTTON_WIDTH = 280.0f;
-    static constexpr float ADD_SET_BUTTON_HEIGHT = 150.0f;
+    static constexpr float ADD_SET_BUTTON_HEIGHT = 100.0f;
+    static constexpr float REPS_BUTTON_SIZE = 100.0f;
     
     // Helper functions
     static float centerX(float width, float screenWidth) {

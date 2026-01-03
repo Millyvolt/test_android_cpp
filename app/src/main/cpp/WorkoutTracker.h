@@ -94,6 +94,7 @@ private:
 
     TextRenderer * m_textRenderer;
     Button * m_startButton, * m_historyButton, * m_endButton, * m_chooseExerciseButton, * m_addSetButton;
+    Button * m_repsIncrementButton, * m_repsDecrementButton;
     bool m_debugMode;
     bool m_showingExerciseList;
     std::vector<std::string> m_availableExercises;

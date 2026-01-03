@@ -21,6 +21,8 @@ WorkoutTracker::WorkoutTracker()
     , m_endButton(nullptr)
     , m_chooseExerciseButton(nullptr)
     , m_addSetButton(nullptr)
+    , m_repsIncrementButton(nullptr)
+    , m_repsDecrementButton(nullptr)
     , m_debugMode(false)
     , m_showingExerciseList(false)
     , m_lastTouchX(0.0f)
@@ -60,6 +62,20 @@ WorkoutTracker::WorkoutTracker()
     m_addSetButton->setTextColor(1.0f, 1.0f, 1.0f, 1.0f);
     m_addSetButton->setTextScale(4.0f);
     
+    m_repsIncrementButton = new Button();
+    m_repsIncrementButton->setText("↑");
+    m_repsIncrementButton->setColor(0.3f, 0.5f, 0.7f, 1.0f);
+    m_repsIncrementButton->setPressedColor(0.4f, 0.6f, 0.8f, 1.0f);
+    m_repsIncrementButton->setTextColor(1.0f, 1.0f, 1.0f, 1.0f);
+    m_repsIncrementButton->setTextScale(4.0f);
+    
+    m_repsDecrementButton = new Button();
+    m_repsDecrementButton->setText("↓");
+    m_repsDecrementButton->setColor(0.5f, 0.3f, 0.3f, 1.0f);
+    m_repsDecrementButton->setPressedColor(0.6f, 0.4f, 0.4f, 1.0f);
+    m_repsDecrementButton->setTextColor(1.0f, 1.0f, 1.0f, 1.0f);
+    m_repsDecrementButton->setTextScale(4.0f);
+    
     // Populate available exercises
     m_availableExercises.push_back("Push-ups");
     m_availableExercises.push_back("Squats");
@@ -75,6 +91,8 @@ WorkoutTracker::~WorkoutTracker() {
     if (m_endButton) delete m_endButton;
     if (m_chooseExerciseButton) delete m_chooseExerciseButton;
     if (m_addSetButton) delete m_addSetButton;
+    if (m_repsIncrementButton) delete m_repsIncrementButton;
+    if (m_repsDecrementButton) delete m_repsDecrementButton;
     if (m_textRenderer) delete m_textRenderer;
 }
 
@@ -266,17 +284,22 @@ void WorkoutTracker::renderExerciseList(Renderer* renderer) {
             std::string repsLabel = "Reps: " + std::to_string(currentReps);
             m_textRenderer->drawText(textX, currentY, repsLabel, 0.9f, 0.9f, 0.9f, alpha, 4.5f);
             
-            // Increment button (↑)
-            float incButtonX = textX + 150.0f;
-            float incButtonY = currentY - 35.0f;
-            float buttonSize = 40.0f;
-            renderer->drawRect(incButtonX, incButtonY, buttonSize, buttonSize, 0.3f, 0.5f, 0.7f, alpha);
-            m_textRenderer->drawText(incButtonX + 12.0f, incButtonY + 10.0f, "↑", 1.0f, 1.0f, 1.0f, alpha, 4.0f);
+            // Increment button (↑) using Button class
+            if (m_repsIncrementButton) {
+                float incButtonX = textX + 250.0f;
+                float incButtonY = currentY - 70.0f;
+                m_repsIncrementButton->setBounds(incButtonX, incButtonY, Layout::REPS_BUTTON_SIZE, Layout::REPS_BUTTON_SIZE);
+                m_repsIncrementButton->render(renderer, m_textRenderer);
+            }
             
-            // Decrement button (↓)
-            float decButtonX = incButtonX + buttonSize + Layout::SPACING_SMALL;
-            renderer->drawRect(decButtonX, incButtonY, buttonSize, buttonSize, 0.5f, 0.3f, 0.3f, alpha);
-            m_textRenderer->drawText(decButtonX + 12.0f, incButtonY + 10.0f, "↓", 1.0f, 1.0f, 1.0f, alpha, 4.0f);
+            // Decrement button (↓) using Button class
+            if (m_repsDecrementButton) {
+                float incButtonX = textX + 250.0f;
+                float incButtonY = currentY - 70.0f;
+                float decButtonX = incButtonX + Layout::REPS_BUTTON_SIZE + Layout::SPACING_SMALL;
+                m_repsDecrementButton->setBounds(decButtonX, incButtonY, Layout::REPS_BUTTON_SIZE, Layout::REPS_BUTTON_SIZE);
+                m_repsDecrementButton->render(renderer, m_textRenderer);
+            }
             
             // Weight display if applicable
             if (exercise.defaultWeight > 0.0f) {
@@ -473,12 +496,14 @@ void WorkoutTracker::onTouchDown(float x, float y) {
                     if (isPointInRect(x, y, itemX, itemY, itemWidth, Layout::EXERCISE_ITEM_HEIGHT)) {
                         Exercise& exercise = m_currentWorkout.exercises[i];
                         float textX = itemX + Layout::PADDING_MEDIUM;
-                        float currentY = itemY + Layout::PADDING_SMALL + 30.0f + 50.0f; // Position after exercise name
+                        float currentY = itemY + Layout::PADDING_SMALL + 30.0f; // Start position (matches rendering)
+                        currentY += 50.0f; // After exercise name (now at sets counter position)
                         
                         // Check for Add Set button click using Button class
+                        // Button is positioned at sets counter line - 65.0f
                         if (m_addSetButton) {
                             float addSetButtonX = textX + 500.0f;
-                            float addSetButtonY = currentY - 65.0f;
+                            float addSetButtonY = currentY - 65.0f; // Position above sets counter (matches rendering)
                             m_addSetButton->setBounds(addSetButtonX, addSetButtonY, Layout::ADD_SET_BUTTON_WIDTH, Layout::ADD_SET_BUTTON_HEIGHT);
                             
                             if (m_addSetButton->containsPoint(x, y)) {
@@ -488,48 +513,59 @@ void WorkoutTracker::onTouchDown(float x, float y) {
                             }
                         }
                         
-                        // Check for Reps increment button (↑)
-                        float incButtonX = textX + 150.0f;
-                        float incButtonY = currentY + 50.0f - 35.0f; // Position for reps field
-                        float buttonSize = 40.0f;
+                        currentY += 50.0f; // After sets counter (now at reps position)
                         
-                        if (isPointInRect(x, y, incButtonX, incButtonY, buttonSize, buttonSize)) {
-                            // Increment reps for first incomplete set or first set
-                            if (!exercise.sets.empty()) {
-                                bool found = false;
-                                for (size_t j = 0; j < exercise.sets.size(); ++j) {
-                                    if (!exercise.sets[j].completed) {
-                                        exercise.sets[j].reps++;
-                                        found = true;
-                                        break;
+                        // Check for Reps increment button (↑) using Button class
+                        if (m_repsIncrementButton) {
+                            float incButtonX = textX + 250.0f;
+                            float incButtonY = currentY - 70.0f; // Position for reps field (matches rendering)
+                            m_repsIncrementButton->setBounds(incButtonX, incButtonY, Layout::REPS_BUTTON_SIZE, Layout::REPS_BUTTON_SIZE);
+                            
+                            if (m_repsIncrementButton->containsPoint(x, y)) {
+                                m_repsIncrementButton->setPressed(true);
+                                // Increment reps for first incomplete set or first set
+                                if (!exercise.sets.empty()) {
+                                    bool found = false;
+                                    for (size_t j = 0; j < exercise.sets.size(); ++j) {
+                                        if (!exercise.sets[j].completed) {
+                                            exercise.sets[j].reps++;
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found) {
+                                        exercise.sets[0].reps++;
                                     }
                                 }
-                                if (!found) {
-                                    exercise.sets[0].reps++;
-                                }
+                                break;
                             }
-                            break;
                         }
                         
-                        // Check for Reps decrement button (↓)
-                        float decButtonX = incButtonX + buttonSize + Layout::SPACING_SMALL;
-                        
-                        if (isPointInRect(x, y, decButtonX, incButtonY, buttonSize, buttonSize)) {
-                            // Decrement reps for first incomplete set or first set (minimum 1)
-                            if (!exercise.sets.empty()) {
-                                bool found = false;
-                                for (size_t j = 0; j < exercise.sets.size(); ++j) {
-                                    if (!exercise.sets[j].completed && exercise.sets[j].reps > 1) {
-                                        exercise.sets[j].reps--;
-                                        found = true;
-                                        break;
+                        // Check for Reps decrement button (↓) using Button class
+                        if (m_repsDecrementButton) {
+                            float incButtonX = textX + 250.0f;
+                            float incButtonY = currentY - 70.0f; // Position for reps field (matches rendering)
+                            float decButtonX = incButtonX + Layout::REPS_BUTTON_SIZE + Layout::SPACING_SMALL;
+                            m_repsDecrementButton->setBounds(decButtonX, incButtonY, Layout::REPS_BUTTON_SIZE, Layout::REPS_BUTTON_SIZE);
+                            
+                            if (m_repsDecrementButton->containsPoint(x, y)) {
+                                m_repsDecrementButton->setPressed(true);
+                                // Decrement reps for first incomplete set or first set (minimum 1)
+                                if (!exercise.sets.empty()) {
+                                    bool found = false;
+                                    for (size_t j = 0; j < exercise.sets.size(); ++j) {
+                                        if (!exercise.sets[j].completed && exercise.sets[j].reps > 1) {
+                                            exercise.sets[j].reps--;
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found && exercise.sets[0].reps > 1) {
+                                        exercise.sets[0].reps--;
                                     }
                                 }
-                                if (!found && exercise.sets[0].reps > 1) {
-                                    exercise.sets[0].reps--;
-                                }
+                                break;
                             }
-                            break;
                         }
                         
                         // Otherwise, just select the exercise
